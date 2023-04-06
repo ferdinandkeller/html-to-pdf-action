@@ -1,15 +1,15 @@
-name: "HTML website to PDF converter"
-description: "Converts an HTML website (can be composed of multiple files) to a PDF."
+name: "HTML to PDF (supports any js framework)"
+description: "Converts an HTML website to a PDF."
 branding:
   icon: "file-text"
-  color: "blue"
+  color: "gray-dark"
 inputs:
   source-path:
-    description: "Where the HTML build is located"
+    description: "Path to the build (must be a directory)"
     required: true
     default: "build"
   destination-path:
-    description: "How to name the generated PDF"
+    description: "Where to save the generated PDF (must end with .pdf)"
     required: true
     default: "out.pdf"
 runs:
