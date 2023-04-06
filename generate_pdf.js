@@ -2,6 +2,8 @@
 const puppeteer = require('puppeteer')
 // import path to compose the paths
 const path = require('path')
+// import a http server to serve the files
+const hs = require('http-server')
 
 // primitive arguments parser
 let args = {}
@@ -34,8 +36,19 @@ if (!('destination-path' in args)) {
     throw new Error('Missing argument: --destination-path')
 }
 
+// start a server to serve the files
+// we can't simply server the files locally using 'file://' because imports in a website are relative to the root
+// so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
+// 'file:///path/to/root/style.css' to make it work
+// to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
+let server = hs.createServer({
+    root: path.join(process.env.GITHUB_WORKSPACE || __dirname, args['source-path']),
+    cache: -1,
+})
+server.listen(8080, '127.0.0.1', generate_pdf)
+
 // we want to run this code in a asynchronous context
-(async () => {
+async function generate_pdf() {
     // launch the browser
     const browser = await puppeteer.launch({
         args: ['--no-sandbox'],
@@ -45,7 +58,7 @@ if (!('destination-path' in args)) {
     const page = await browser.newPage()
 
     // go to the website
-    await page.goto('file://' + path.join(process.env.GITHUB_WORKSPACE || __dirname, args['source-path'], 'index.html'))
+    await page.goto('http://127.0.0.1:8080/')
 
     // render the page to a pdf
     await page.pdf({
@@ -57,4 +70,7 @@ if (!('destination-path' in args)) {
 
     // close browser
     await browser.close()
-})()
+
+    // close the server
+    server.close()
+}

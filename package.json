@@ -1,6 +1,6 @@
 {
   "name": "html-to-pdf-action",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "main": "generate_pdf.js",
   "author": {
     "name": "Ferdinand Keller",
@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "http-server": "^14.1.1",
     "puppeteer": "^19.8.3"
   }
 }
