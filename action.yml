@@ -16,5 +16,7 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - --source-path ${{ inputs.source-path }}
-    - --destination-path ${{ inputs.destination-path }}
+    - --source-path
+    - ${{ inputs.source-path }}
+    - --destination-path
+    - ${{ inputs.destination-path }}
