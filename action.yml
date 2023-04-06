@@ -1,0 +1,20 @@
+name: "HTML to PDF"
+description: "Converts an HTML page to a PDF."
+branding:
+  icon: "file-text"
+  color: "blue"
+inputs:
+  source-path:
+    description: "Where the HTML build is located"
+    required: true
+    default: "build"
+  destination-path:
+    description: "How to name the generated PDF"
+    required: true
+    default: "out.pdf"
+runs:
+  using: "docker"
+  image: "Dockerfile"
+  args:
+    - --source-path ${{ inputs.source-path }}
+    - --destination-path ${{ inputs.destination-path }}
