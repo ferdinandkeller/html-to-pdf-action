@@ -60,7 +60,7 @@ async function generate_pdf() {
     // go to the website
     await page.goto('http://127.0.0.1:8080/', {
         // we want to wait until the page is fully loaded (this includes images, styles, fonts, etc.)
-        waitUntil: 'networkidle',
+        waitUntil: 'networkidle0',
     })
 
     // render the page to a pdf
