@@ -1,5 +1,5 @@
-name: "HTML to PDF"
-description: "Converts an HTML page to a PDF."
+name: "HTML website to PDF converter"
+description: "Converts an HTML website (can be composed of multiple files) to a PDF."
 branding:
   icon: "file-text"
   color: "blue"
