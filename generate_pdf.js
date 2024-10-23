@@ -56,6 +56,7 @@ async function generate_pdf() {
             // we need to run as root (we can't change that)
             // chromium throws security warning when running as root, so we need to disable the sandbox
             '--no-sandbox',
+            '--disable-setuid-sandbox',
             // we also need to disable the shared memory, as we are running in a docker container
             // with a limited amount of memory
             '--disable-dev-shm-usage',
