@@ -4,7 +4,7 @@ This action will automatically render any local webpage into a PDF.
 
 Because it integrates its own web-server, it has no problems importing css, js and fonts (whether available locally or referenced online, including from websites like google fonts), and will wait for everything to render properly before rending the output to a PDF. It means your webpage doesn't have to be a static HTML page, but can also use any javascript framework.
 
-The action internally uses chromium, so the rendered PDF won't have any of the weird problems that exist with Firefox or WebKit, like:
+The action internally uses chromium, so the rendered PDF won't have any of the weird problems that can sometimes exist like:
 - font kerning
 - missing styles or resources
 - javascript not executed before rendering
