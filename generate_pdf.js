@@ -42,7 +42,10 @@ if (!('destination-path' in args)) {
 // 'file:///path/to/root/style.css' to make it work
 // to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
 let server = hs.createServer({
-    root: path.join(process.env.GITHUB_WORKSPACE || __dirname, args['source-path']),
+    root: path.join(
+        process.env.GITHUB_WORKSPACE || __dirname,
+        args['source-path']
+    ),
     cache: -1,
 })
 server.listen(8000, '0.0.0.0', generate_pdf)
@@ -83,8 +86,10 @@ async function generate_pdf() {
     // create a page
     const page = await browser.newPage()
 
-    // set a porper user agent to act like a normal browser
-    await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36");
+    // set a proper user agent to act like a normal browser
+    await page.setUserAgent(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
+    )
 
     // go to the website
     await page.goto('http://localhost:8000', {
@@ -94,7 +99,10 @@ async function generate_pdf() {
 
     // render the page to a pdf
     await page.pdf({
-        path: path.join(process.env.GITHUB_WORKSPACE || __dirname, args['destination-path']),
+        path: path.join(
+            process.env.GITHUB_WORKSPACE || __dirname,
+            args['destination-path']
+        ),
         format: 'A4',
         printBackground: true,
     })
