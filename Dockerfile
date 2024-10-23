@@ -1,6 +1,6 @@
 # start from the official node v18 image
 # we use alpine to keep the image (relatively) small
-FROM node:18-alpine
+FROM node:20-alpine
 
 # install chromium and its dependencies
 RUN apk add --no-cache \
