@@ -1,6 +1,6 @@
 {
   "name": "html-to-pdf-action",
-  "version": "1.6.0",
+  "version": "2.0.0",
   "main": "generate_pdf.js",
   "author": {
     "name": "Ferdinand Keller",
