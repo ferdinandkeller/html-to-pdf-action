@@ -3,7 +3,7 @@
 FROM node:20-alpine
 
 # install chromium and its dependencies
-RUN apk add --no-cache \
+RUN apk update && apk upgrade && apk add --no-cache \
     msttcorefonts-installer font-noto fontconfig \
     freetype ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
     chromium \
