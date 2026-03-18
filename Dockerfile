@@ -1,6 +1,6 @@
 # start from the official node v18 image
 # we use alpine to keep the image (relatively) small
-FROM node:20-alpine
+FROM node:24-alpine
 
 # install chromium and its dependencies
 RUN apk update && apk upgrade && apk add --no-cache \
@@ -17,7 +17,7 @@ RUN update-ms-fonts \
 # - we don't want to use puppeteer built-in chromium (because it's old and doesn't support ARM)
 # - we want to use the chromium we just installed
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # copy the package.json, which contains the dependencies
 COPY package.json /html-to-pdf-action/package.json

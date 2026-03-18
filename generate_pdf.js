@@ -48,15 +48,19 @@ let server = hs.createServer({
     ),
     cache: -1,
 })
-server.listen(8000, '0.0.0.0', generate_pdf)
+server.listen(8000, '0.0.0.0', () => {
+    generate_pdf().catch(err => {
+        console.error('Error generating PDF:', err)
+        server.close()
+        process.exit(1)
+    })
+})
 
 // we want to run this code in a asynchronous context
 async function generate_pdf() {
     // launch the browser
     const browser = await puppeteer.launch({
         args: [
-            // we are running inside docker, we don't want a window
-            '--headless',
             // we provide a default (virtual) window size
             // that way it's consistent across different environments
             '--window-size=1920,1080',
