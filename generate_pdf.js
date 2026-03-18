@@ -161,7 +161,28 @@ if (require.main === module) {
         ),
         cache: -1,
     })
+    const serverRoot = path.join(
+        process.env.GITHUB_WORKSPACE || __dirname,
+        args['source-path']
+    )
+    console.log('Server root:', serverRoot)
+    console.log('GITHUB_WORKSPACE:', process.env.GITHUB_WORKSPACE)
+    console.log('source-path:', args['source-path'])
+
+    const fs = require('fs')
+    try {
+        const stat = fs.statSync(serverRoot)
+        console.log('Root is directory:', stat.isDirectory())
+        console.log('Root is file:', stat.isFile())
+        if (stat.isDirectory()) {
+            console.log('Contents:', fs.readdirSync(serverRoot))
+        }
+    } catch (e) {
+        console.error('Root path error:', e.message)
+    }
+
     server.listen(8000, '0.0.0.0', () => {
+        console.log('Server listening on http://0.0.0.0:8000')
         generate_pdf(args, server).catch(err => {
             console.error('Error generating PDF:', err)
             server.close()
