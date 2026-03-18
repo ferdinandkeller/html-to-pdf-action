@@ -1,5 +1,5 @@
 // import puppeteer, which is based on a chromium browser
-const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer-core')
 // import path to compose the paths
 const path = require('path')
 // import a http server to serve the files
@@ -44,6 +44,8 @@ function parseArgs(argv) {
 async function generate_pdf(args, server) {
     // launch the browser
     const browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        headless: true,
         args: [
             // we provide a default (virtual) window size
             // that way it's consistent across different environments

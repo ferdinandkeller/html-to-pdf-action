@@ -1,7 +1,7 @@
 const { parseArgs, generate_pdf } = require('./generate_pdf')
 
-jest.mock('puppeteer')
-const puppeteer = require('puppeteer')
+jest.mock('puppeteer-core')
+const puppeteer = require('puppeteer-core')
 
 // --- parseArgs ---
 

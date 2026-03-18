@@ -13,10 +13,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
 RUN update-ms-fonts \
     && fc-cache -f
 
-# convigure puppeteer
-# - we don't want to use puppeteer built-in chromium (because it's old and doesn't support ARM)
-# - we want to use the chromium we just installed
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+# configure puppeteer to use the system chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # copy the package.json, which contains the dependencies
