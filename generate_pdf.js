@@ -45,7 +45,7 @@ async function generate_pdf(args, server) {
     // launch the browser
     const browser = await puppeteer.launch({
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
-        headless: true,
+        headless: 'shell',
         pipe: true,
         args: [
             // we provide a default (virtual) window size

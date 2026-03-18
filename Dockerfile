@@ -1,17 +1,14 @@
-# start from the official node v18 image
-# we use alpine to keep the image (relatively) small
-FROM node:24-alpine
+FROM node:24-slim
 
-# install chromium and its dependencies
-RUN apk update && apk upgrade && apk add --no-cache \
-    msttcorefonts-installer font-noto fontconfig \
-    freetype ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
+# install chromium and fonts
+RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
-    && rm -rf /var/cache/apk/* /tmp/*
+    fonts-liberation fonts-noto fonts-dejavu-core fonts-freefont-ttf \
+    fontconfig \
+    && rm -rf /var/lib/apt/lists/*
 
-# install fonts
-RUN update-ms-fonts \
-    && fc-cache -f
+# rebuild font cache
+RUN fc-cache -f
 
 # configure puppeteer to use the system chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
