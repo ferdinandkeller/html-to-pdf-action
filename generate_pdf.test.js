@@ -1,6 +1,8 @@
-const { parseArgs, generate_pdf } = require('./generate_pdf')
+const { parseArgs, generate_pdf, resolveSource } = require('./generate_pdf')
+const fs = require('fs')
 
 jest.mock('puppeteer-core')
+jest.mock('fs')
 const puppeteer = require('puppeteer-core')
 
 // --- parseArgs ---
@@ -58,12 +60,36 @@ describe('parseArgs', () => {
     })
 })
 
+// --- resolveSource ---
+
+describe('resolveSource', () => {
+    afterEach(() => jest.restoreAllMocks())
+
+    test('returns directory and / when source-path is a directory', () => {
+        fs.statSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
+        const result = resolveSource('./src')
+        expect(result.urlPath).toBe('/')
+        expect(result.root).toContain('src')
+    })
+
+    test('returns parent directory and filename when source-path is a file', () => {
+        fs.statSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
+        const result = resolveSource('./instructions/product_list.html')
+        expect(result.urlPath).toBe('/product_list.html')
+        expect(result.root).toContain('instructions')
+        expect(result.root).not.toContain('product_list.html')
+    })
+})
+
 // --- generate_pdf ---
 
 describe('generate_pdf', () => {
     let mockPage, mockBrowser, mockServer
 
     beforeEach(() => {
+        // Default: source-path is a directory
+        fs.statSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
+
         mockPage = {
             setUserAgent: jest.fn().mockResolvedValue(undefined),
             goto: jest.fn().mockResolvedValue(undefined),
@@ -100,12 +126,23 @@ describe('generate_pdf', () => {
         )
     })
 
-    test('navigates to localhost:8000 and waits for network idle', async () => {
+    test('navigates to localhost:8000/ for directory source-path', async () => {
         await generate_pdf(
             { 'source-path': './src', 'destination-path': './out.pdf' },
             mockServer
         )
-        expect(mockPage.goto).toHaveBeenCalledWith('http://localhost:8000', {
+        expect(mockPage.goto).toHaveBeenCalledWith('http://localhost:8000/', {
+            waitUntil: 'networkidle0',
+        })
+    })
+
+    test('navigates to localhost:8000/file.html for file source-path', async () => {
+        fs.statSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
+        await generate_pdf(
+            { 'source-path': './instructions/product_list.html', 'destination-path': './out.pdf' },
+            mockServer
+        )
+        expect(mockPage.goto).toHaveBeenCalledWith('http://localhost:8000/product_list.html', {
             waitUntil: 'networkidle0',
         })
     })

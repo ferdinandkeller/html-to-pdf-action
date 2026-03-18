@@ -40,6 +40,23 @@ function parseArgs(argv) {
     return args
 }
 
+// resolve source-path into a server root directory and a URL path
+function resolveSource(sourcePath) {
+    const fs = require('fs')
+    const fullPath = path.join(
+        process.env.GITHUB_WORKSPACE || __dirname,
+        sourcePath
+    )
+    const stat = fs.statSync(fullPath)
+    if (stat.isFile()) {
+        return {
+            root: path.dirname(fullPath),
+            urlPath: '/' + path.basename(fullPath),
+        }
+    }
+    return { root: fullPath, urlPath: '/' }
+}
+
 // we want to run this code in a asynchronous context
 async function generate_pdf(args, server) {
     // launch the browser
@@ -123,7 +140,8 @@ async function generate_pdf(args, server) {
     )
 
     // go to the website
-    await page.goto('http://localhost:8000', {
+    const { urlPath } = resolveSource(args['source-path'])
+    await page.goto('http://localhost:8000' + urlPath, {
         // we want to wait until the page is fully loaded (this includes images, styles, fonts, etc.)
         waitUntil: 'networkidle0',
     })
@@ -154,35 +172,12 @@ if (require.main === module) {
     // so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
     // 'file:///path/to/root/style.css' to make it work
     // to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
+    const { root: serverRoot } = resolveSource(args['source-path'])
     const server = hs.createServer({
-        root: path.join(
-            process.env.GITHUB_WORKSPACE || __dirname,
-            args['source-path']
-        ),
+        root: serverRoot,
         cache: -1,
     })
-    const serverRoot = path.join(
-        process.env.GITHUB_WORKSPACE || __dirname,
-        args['source-path']
-    )
-    console.log('Server root:', serverRoot)
-    console.log('GITHUB_WORKSPACE:', process.env.GITHUB_WORKSPACE)
-    console.log('source-path:', args['source-path'])
-
-    const fs = require('fs')
-    try {
-        const stat = fs.statSync(serverRoot)
-        console.log('Root is directory:', stat.isDirectory())
-        console.log('Root is file:', stat.isFile())
-        if (stat.isDirectory()) {
-            console.log('Contents:', fs.readdirSync(serverRoot))
-        }
-    } catch (e) {
-        console.error('Root path error:', e.message)
-    }
-
     server.listen(8000, '0.0.0.0', () => {
-        console.log('Server listening on http://0.0.0.0:8000')
         generate_pdf(args, server).catch(err => {
             console.error('Error generating PDF:', err)
             server.close()
@@ -191,4 +186,4 @@ if (require.main === module) {
     })
 }
 
-module.exports = { parseArgs, generate_pdf }
+module.exports = { parseArgs, generate_pdf, resolveSource }
