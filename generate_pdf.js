@@ -47,6 +47,7 @@ async function generate_pdf(args, server) {
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
         headless: 'shell',
         pipe: true,
+        dumpio: true,
         args: [
             // we provide a default (virtual) window size
             // that way it's consistent across different environments
