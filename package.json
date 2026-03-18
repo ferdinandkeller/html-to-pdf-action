@@ -7,6 +7,12 @@
     "email": "ferdinand.keller@proton.me"
   },
   "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
   "dependencies": {
     "http-server": "^14.1.1",
     "puppeteer": "^23.9.0"

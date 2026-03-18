@@ -6,58 +6,42 @@ const path = require('path')
 const hs = require('http-server')
 
 // primitive arguments parser
-let args = {}
-let waiting = false
-let arg_name = ''
-for (let arg_index = 2; arg_index < process.argv.length; arg_index++) {
-    let arg = process.argv[arg_index]
-    if (waiting) {
-        let maybe_num = Number(arg)
-        if (!isNaN(maybe_num)) {
-            arg = maybe_num
-        }
-        args[arg_name] = arg
-        waiting = false
-    } else {
-        if (arg.substring(0, 2) === '--') {
-            arg_name = arg.substring(2)
-            waiting = true
+function parseArgs(argv) {
+    let args = {}
+    let waiting = false
+    let arg_name = ''
+    for (let arg_index = 2; arg_index < argv.length; arg_index++) {
+        let arg = argv[arg_index]
+        if (waiting) {
+            let maybe_num = Number(arg)
+            if (!isNaN(maybe_num)) {
+                arg = maybe_num
+            }
+            args[arg_name] = arg
+            waiting = false
         } else {
-            throw new Error('Invalid argument: ' + arg)
+            if (arg.substring(0, 2) === '--') {
+                arg_name = arg.substring(2)
+                waiting = true
+            } else {
+                throw new Error('Invalid argument: ' + arg)
+            }
         }
     }
-}
 
-// throw an error if some aguments are missing
-if (!('source-path' in args)) {
-    throw new Error('Missing argument: --source-path')
-}
-if (!('destination-path' in args)) {
-    throw new Error('Missing argument: --destination-path')
-}
+    // throw an error if some aguments are missing
+    if (!('source-path' in args)) {
+        throw new Error('Missing argument: --source-path')
+    }
+    if (!('destination-path' in args)) {
+        throw new Error('Missing argument: --destination-path')
+    }
 
-// start a server to serve the files
-// we can't simply server the files locally using 'file://' because imports in a website are relative to the root
-// so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
-// 'file:///path/to/root/style.css' to make it work
-// to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
-let server = hs.createServer({
-    root: path.join(
-        process.env.GITHUB_WORKSPACE || __dirname,
-        args['source-path']
-    ),
-    cache: -1,
-})
-server.listen(8000, '0.0.0.0', () => {
-    generate_pdf().catch(err => {
-        console.error('Error generating PDF:', err)
-        server.close()
-        process.exit(1)
-    })
-})
+    return args
+}
 
 // we want to run this code in a asynchronous context
-async function generate_pdf() {
+async function generate_pdf(args, server) {
     // launch the browser
     const browser = await puppeteer.launch({
         args: [
@@ -156,3 +140,30 @@ async function generate_pdf() {
     // close the server
     server.close()
 }
+
+// only run when executed directly, not when required by tests
+if (require.main === module) {
+    const args = parseArgs(process.argv)
+
+    // start a server to serve the files
+    // we can't simply server the files locally using 'file://' because imports in a website are relative to the root
+    // so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
+    // 'file:///path/to/root/style.css' to make it work
+    // to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
+    const server = hs.createServer({
+        root: path.join(
+            process.env.GITHUB_WORKSPACE || __dirname,
+            args['source-path']
+        ),
+        cache: -1,
+    })
+    server.listen(8000, '0.0.0.0', () => {
+        generate_pdf(args, server).catch(err => {
+            console.error('Error generating PDF:', err)
+            server.close()
+            process.exit(1)
+        })
+    })
+}
+
+module.exports = { parseArgs, generate_pdf }
