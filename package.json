@@ -16,6 +16,9 @@
     "node": "^24.14.1",
     "puppeteer-core": "^23.9.0"
   },
+  "overrides": {
+    "html-encoding-sniffer": "^5.0.0"
+  },
   "devDependencies": {
     "vitest": "^3.2.4"
   }
