@@ -1,12 +1,18 @@
 // import puppeteer, which is based on a chromium browser
-const puppeteer = require('puppeteer-core')
+import puppeteer from 'puppeteer-core'
 // import path to compose the paths
-const path = require('path')
+import path from 'path'
 // import a http server to serve the files
-const hs = require('http-server')
+import hs from 'http-server'
+// import fs
+import fs from 'fs'
+// import url utilities for ESM __dirname equivalent
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // primitive arguments parser
-function parseArgs(argv) {
+export function parseArgs(argv) {
     let args = {}
     let waiting = false
     let arg_name = ''
@@ -41,8 +47,7 @@ function parseArgs(argv) {
 }
 
 // resolve source-path into a server root directory and a URL path
-function resolveSource(sourcePath) {
-    const fs = require('fs')
+export function resolveSource(sourcePath) {
     const fullPath = path.join(
         process.env.GITHUB_WORKSPACE || __dirname,
         sourcePath
@@ -58,7 +63,7 @@ function resolveSource(sourcePath) {
 }
 
 // we want to run this code in a asynchronous context
-async function generate_pdf(args, server) {
+export async function generate_pdf(args, server) {
     // launch the browser
     const browser = await puppeteer.launch({
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
@@ -163,8 +168,9 @@ async function generate_pdf(args, server) {
     server.close()
 }
 
-// only run when executed directly, not when required by tests
-if (require.main === module) {
+// only run when executed directly, not when imported by tests
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+if (isMain) {
     const args = parseArgs(process.argv)
 
     // start a server to serve the files
@@ -185,5 +191,3 @@ if (require.main === module) {
         })
     })
 }
-
-module.exports = { parseArgs, generate_pdf, resolveSource }

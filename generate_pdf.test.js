@@ -1,9 +1,17 @@
-const { parseArgs, generate_pdf, resolveSource } = require('./generate_pdf')
-const fs = require('fs')
+import { vi, describe, test, expect, beforeEach, afterEach } from 'vitest'
 
-jest.mock('puppeteer-core')
-jest.mock('fs')
-const puppeteer = require('puppeteer-core')
+const mockLaunch = vi.fn()
+const mockStatSync = vi.fn()
+
+vi.mock('puppeteer-core', () => ({
+    default: { launch: mockLaunch },
+}))
+
+vi.mock('fs', () => ({
+    default: { statSync: mockStatSync },
+}))
+
+const { parseArgs, generate_pdf, resolveSource } = await import('./generate_pdf.js')
 
 // --- parseArgs ---
 
@@ -63,17 +71,17 @@ describe('parseArgs', () => {
 // --- resolveSource ---
 
 describe('resolveSource', () => {
-    afterEach(() => jest.restoreAllMocks())
+    afterEach(() => vi.restoreAllMocks())
 
     test('returns directory and / when source-path is a directory', () => {
-        fs.statSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
+        mockStatSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
         const result = resolveSource('./src')
         expect(result.urlPath).toBe('/')
         expect(result.root).toContain('src')
     })
 
     test('returns parent directory and filename when source-path is a file', () => {
-        fs.statSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
+        mockStatSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
         const result = resolveSource('./instructions/product_list.html')
         expect(result.urlPath).toBe('/product_list.html')
         expect(result.root).toContain('instructions')
@@ -88,25 +96,25 @@ describe('generate_pdf', () => {
 
     beforeEach(() => {
         // Default: source-path is a directory
-        fs.statSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
+        mockStatSync.mockReturnValue({ isFile: () => false, isDirectory: () => true })
 
         mockPage = {
-            setUserAgent: jest.fn().mockResolvedValue(undefined),
-            goto: jest.fn().mockResolvedValue(undefined),
-            pdf: jest.fn().mockResolvedValue(undefined),
+            setUserAgent: vi.fn().mockResolvedValue(undefined),
+            goto: vi.fn().mockResolvedValue(undefined),
+            pdf: vi.fn().mockResolvedValue(undefined),
         }
         mockBrowser = {
-            newPage: jest.fn().mockResolvedValue(mockPage),
-            close: jest.fn().mockResolvedValue(undefined),
+            newPage: vi.fn().mockResolvedValue(mockPage),
+            close: vi.fn().mockResolvedValue(undefined),
         }
         mockServer = {
-            close: jest.fn(),
+            close: vi.fn(),
         }
-        puppeteer.launch.mockResolvedValue(mockBrowser)
+        mockLaunch.mockResolvedValue(mockBrowser)
     })
 
     afterEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     test('launches puppeteer with required sandbox flags', async () => {
@@ -114,7 +122,7 @@ describe('generate_pdf', () => {
             { 'source-path': './src', 'destination-path': './out.pdf' },
             mockServer
         )
-        expect(puppeteer.launch).toHaveBeenCalledWith(
+        expect(mockLaunch).toHaveBeenCalledWith(
             expect.objectContaining({
                 args: expect.arrayContaining([
                     '--no-sandbox',
@@ -137,7 +145,7 @@ describe('generate_pdf', () => {
     })
 
     test('navigates to localhost:8000/file.html for file source-path', async () => {
-        fs.statSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
+        mockStatSync.mockReturnValue({ isFile: () => true, isDirectory: () => false })
         await generate_pdf(
             { 'source-path': './instructions/product_list.html', 'destination-path': './out.pdf' },
             mockServer
@@ -180,7 +188,7 @@ describe('generate_pdf', () => {
     })
 
     test('rejects when puppeteer.launch fails', async () => {
-        puppeteer.launch.mockRejectedValue(new Error('Chrome not found'))
+        mockLaunch.mockRejectedValue(new Error('Chrome not found'))
         await expect(
             generate_pdf(
                 { 'source-path': './src', 'destination-path': './out.pdf' },
