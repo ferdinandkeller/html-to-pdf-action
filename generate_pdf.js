@@ -1,62 +1,80 @@
 // import puppeteer, which is based on a chromium browser
-const puppeteer = require('puppeteer')
+import puppeteer from 'puppeteer-core'
 // import path to compose the paths
-const path = require('path')
+import path from 'path'
 // import a http server to serve the files
-const hs = require('http-server')
+import hs from 'http-server'
+// import fs
+import fs from 'fs'
+// import url utilities for ESM __dirname equivalent
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // primitive arguments parser
-let args = {}
-let waiting = false
-let arg_name = ''
-for (let arg_index = 2; arg_index < process.argv.length; arg_index++) {
-    let arg = process.argv[arg_index]
-    if (waiting) {
-        let maybe_num = Number(arg)
-        if (!isNaN(maybe_num)) {
-            arg = maybe_num
-        }
-        args[arg_name] = arg
-        waiting = false
-    } else {
-        if (arg.substring(0, 2) === '--') {
-            arg_name = arg.substring(2)
-            waiting = true
+export function parseArgs(argv) {
+    let args = {}
+    let waiting = false
+    let arg_name = ''
+    for (let arg_index = 2; arg_index < argv.length; arg_index++) {
+        let arg = argv[arg_index]
+        if (waiting) {
+            let maybe_num = Number(arg)
+            if (!isNaN(maybe_num)) {
+                arg = maybe_num
+            }
+            args[arg_name] = arg
+            waiting = false
         } else {
-            throw new Error('Invalid argument: ' + arg)
+            if (arg.substring(0, 2) === '--') {
+                arg_name = arg.substring(2)
+                waiting = true
+            } else {
+                throw new Error('Invalid argument: ' + arg)
+            }
         }
     }
+
+    // throw an error if some aguments are missing
+    if (!('source-path' in args)) {
+        throw new Error('Missing argument: --source-path')
+    }
+    if (!('destination-path' in args)) {
+        throw new Error('Missing argument: --destination-path')
+    }
+    // if last argument was a flag without a value, throw an error
+    if (waiting) {
+        throw new Error('Missing value for argument: --' + arg_name)
+    }
+
+    return args
 }
 
-// throw an error if some aguments are missing
-if (!('source-path' in args)) {
-    throw new Error('Missing argument: --source-path')
-}
-if (!('destination-path' in args)) {
-    throw new Error('Missing argument: --destination-path')
-}
-
-// start a server to serve the files
-// we can't simply server the files locally using 'file://' because imports in a website are relative to the root
-// so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
-// 'file:///path/to/root/style.css' to make it work
-// to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
-let server = hs.createServer({
-    root: path.join(
+// resolve source-path into a server root directory and a URL path
+export function resolveSource(sourcePath) {
+    const fullPath = path.join(
         process.env.GITHUB_WORKSPACE || __dirname,
-        args['source-path']
-    ),
-    cache: -1,
-})
-server.listen(8000, '0.0.0.0', generate_pdf)
+        sourcePath
+    )
+    const stat = fs.statSync(fullPath)
+    if (stat.isFile()) {
+        return {
+            root: path.dirname(fullPath),
+            urlPath: '/' + path.basename(fullPath),
+        }
+    }
+    return { root: fullPath, urlPath: '/' }
+}
 
 // we want to run this code in a asynchronous context
-async function generate_pdf() {
+export async function generate_pdf(args, server) {
     // launch the browser
     const browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+        headless: 'shell',
+        pipe: true,
+        dumpio: true,
         args: [
-            // we are running inside docker, we don't want a window
-            '--headless',
             // we provide a default (virtual) window size
             // that way it's consistent across different environments
             '--window-size=1920,1080',
@@ -126,12 +144,14 @@ async function generate_pdf() {
     const page = await browser.newPage()
 
     // set a proper user agent to act like a normal browser
-    await page.setUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
-    )
-
+    await page.setUserAgent({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        platform: 'Win32',
+    });
+    
     // go to the website
-    await page.goto('http://localhost:8000', {
+    const { urlPath } = resolveSource(args['source-path'])
+    await page.goto('http://localhost:8000' + urlPath, {
         // we want to wait until the page is fully loaded (this includes images, styles, fonts, etc.)
         waitUntil: 'networkidle0',
     })
@@ -151,4 +171,28 @@ async function generate_pdf() {
 
     // close the server
     server.close()
+}
+
+// only run when executed directly, not when imported by tests
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+if (isMain) {
+    const args = parseArgs(process.argv)
+
+    // start a server to serve the files
+    // we can't simply server the files locally using 'file://' because imports in a website are relative to the root
+    // so when you want to import your CSS styles, you will have an element with the url '/style.css', where you would need
+    // 'file:///path/to/root/style.css' to make it work
+    // to avoid this, we start a server and serve the files from there, and then we can use the url 'http://127.0.0.1'
+    const { root: serverRoot } = resolveSource(args['source-path'])
+    const server = hs.createServer({
+        root: serverRoot,
+        cache: -1,
+    })
+    server.listen(8000, '0.0.0.0', () => {
+        generate_pdf(args, server).catch(err => {
+            console.error('Error generating PDF:', err)
+            server.close()
+            process.exit(1)
+        })
+    })
 }
