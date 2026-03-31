@@ -17,7 +17,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 COPY package.json package-lock.json /html-to-pdf-action/
 
 # install the dependencies
-RUN npm install --prefix /html-to-pdf-action
+RUN npm ci --prefix /html-to-pdf-action
 
 # copy the pdf generator script
 COPY generate_pdf.js /html-to-pdf-action/generate_pdf.js
