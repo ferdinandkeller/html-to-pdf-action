@@ -42,6 +42,10 @@ export function parseArgs(argv) {
     if (!('destination-path' in args)) {
         throw new Error('Missing argument: --destination-path')
     }
+    // if last argument was a flag without a value, throw an error
+    if (waiting) {
+        throw new Error('Missing value for argument: --' + arg_name)
+    }
 
     return args
 }
@@ -140,10 +144,11 @@ export async function generate_pdf(args, server) {
     const page = await browser.newPage()
 
     // set a proper user agent to act like a normal browser
-    await page.setUserAgent(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36'
-    )
-
+    await page.setUserAgent({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        platform: 'Win32',
+    });
+    
     // go to the website
     const { urlPath } = resolveSource(args['source-path'])
     await page.goto('http://localhost:8000' + urlPath, {
