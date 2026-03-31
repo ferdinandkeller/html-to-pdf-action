@@ -14,7 +14,7 @@ RUN fc-cache -f
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # copy the package.json, which contains the dependencies
-COPY package.json /html-to-pdf-action/package.json
+COPY package.json package-lock.json /html-to-pdf-action/
 
 # install the dependencies
 RUN npm install --prefix /html-to-pdf-action
