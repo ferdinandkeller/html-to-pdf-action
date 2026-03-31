@@ -42,6 +42,10 @@ export function parseArgs(argv) {
     if (!('destination-path' in args)) {
         throw new Error('Missing argument: --destination-path')
     }
+    // if last argument was a flag without a value, throw an error
+    if (waiting) {
+        throw new Error('Missing value for argument: --' + arg_name)
+    }
 
     return args
 }
